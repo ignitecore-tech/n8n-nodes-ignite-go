@@ -1,101 +1,102 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 const TO_DESCRIPTION =
-	'Destino. Pessoa: só o número com DDI e DDD, sem + nem espaços (ex.: 5511999999999). Grupo: JID completo terminado em @g.us (ex.: 120363012345678901@g.us). Também aceita JID completo @s.whatsapp.net, @lid ou @newsletter.';
+	'Recipient. Person: only the number with country and area code, without + or spaces (e.g. 5511999999999). Group: full JID ending in @g.us (e.g. 120363012345678901@g.us). Full JIDs ending in @s.whatsapp.net, @lid or @newsletter are also accepted.';
 
 const MEDIA_OPERATIONS = ['sendImage', 'sendVideo', 'sendAudio', 'sendDocument', 'sendSticker'];
 
 export const messageOperations: INodeProperties[] = [
 	{
-		displayName: 'Operação',
+		displayName: 'Operation',
 		name: 'operation',
 		type: 'options',
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['message'] } },
 		options: [
 			{
-				name: 'Apagar',
+				name: 'Delete',
 				value: 'delete',
-				description: 'Apaga uma mensagem para todos (revoke)',
-				action: 'Apagar mensagem',
+				description: 'Delete a message for everyone',
+				action: 'Delete a message',
 			},
 			{
-				name: 'Editar',
+				name: 'Edit',
 				value: 'edit',
-				description: 'Edita o texto de uma mensagem enviada pela instância (até cerca de 15 minutos após o envio)',
-				action: 'Editar mensagem',
+				description:
+					'Edit the text of a message sent by the instance (up to about 15 minutes after sending)',
+				action: 'Edit a message',
 			},
 			{
-				name: 'Enviar Áudio',
-				value: 'sendAudio',
-				description: 'Envia áudio, como nota de voz (PTT) ou como arquivo',
-				action: 'Enviar áudio',
-			},
-			{
-				name: 'Enviar Contato',
-				value: 'sendContact',
-				description: 'Envia um cartão de contato (vCard)',
-				action: 'Enviar contato',
-			},
-			{
-				name: 'Enviar Documento',
-				value: 'sendDocument',
-				description: 'Envia um arquivo como documento',
-				action: 'Enviar documento',
-			},
-			{
-				name: 'Enviar Enquete',
-				value: 'sendPoll',
-				description: 'Envia uma enquete com opções',
-				action: 'Enviar enquete',
-			},
-			{
-				name: 'Enviar Figurinha',
-				value: 'sendSticker',
-				description: 'Envia uma figurinha (WebP)',
-				action: 'Enviar figurinha',
-			},
-			{
-				name: 'Enviar Imagem',
-				value: 'sendImage',
-				description: 'Envia uma imagem com legenda opcional',
-				action: 'Enviar imagem',
-			},
-			{
-				name: 'Enviar Link com Prévia',
-				value: 'sendLink',
-				description: 'Envia texto com prévia de link',
-				action: 'Enviar link com prévia',
-			},
-			{
-				name: 'Enviar Localização',
-				value: 'sendLocation',
-				description: 'Envia uma localização no mapa',
-				action: 'Enviar localização',
-			},
-			{
-				name: 'Enviar Texto',
-				value: 'sendText',
-				description: 'Envia uma mensagem de texto',
-				action: 'Enviar texto',
-			},
-			{
-				name: 'Enviar Vídeo',
-				value: 'sendVideo',
-				description: 'Envia um vídeo com legenda opcional',
-				action: 'Enviar vídeo',
-			},
-			{
-				name: 'Marcar como Lida',
+				name: 'Mark as Read',
 				value: 'markAsRead',
-				description: 'Marca mensagens recebidas como lidas',
-				action: 'Marcar mensagem como lida',
+				description: 'Mark received messages as read',
+				action: 'Mark messages as read',
 			},
 			{
-				name: 'Reagir',
+				name: 'React',
 				value: 'react',
-				description: 'Reage a uma mensagem com um emoji (vazio remove a reação)',
-				action: 'Reagir a mensagem',
+				description: 'React to a message with an emoji (empty removes the reaction)',
+				action: 'React to a message',
+			},
+			{
+				name: 'Send Audio',
+				value: 'sendAudio',
+				description: 'Send audio as a voice note (PTT) or as a file',
+				action: 'Send an audio message',
+			},
+			{
+				name: 'Send Contact',
+				value: 'sendContact',
+				description: 'Send a contact card (vCard)',
+				action: 'Send a contact',
+			},
+			{
+				name: 'Send Document',
+				value: 'sendDocument',
+				description: 'Send a file as a document',
+				action: 'Send a document',
+			},
+			{
+				name: 'Send Image',
+				value: 'sendImage',
+				description: 'Send an image with an optional caption',
+				action: 'Send an image',
+			},
+			{
+				name: 'Send Link',
+				value: 'sendLink',
+				description: 'Send text with a link preview',
+				action: 'Send a link with preview',
+			},
+			{
+				name: 'Send Location',
+				value: 'sendLocation',
+				description: 'Send a location on the map',
+				action: 'Send a location',
+			},
+			{
+				name: 'Send Poll',
+				value: 'sendPoll',
+				description: 'Send a poll with answer options',
+				action: 'Send a poll',
+			},
+			{
+				name: 'Send Sticker',
+				value: 'sendSticker',
+				description: 'Send a sticker (WebP)',
+				action: 'Send a sticker',
+			},
+			{
+				name: 'Send Text',
+				value: 'sendText',
+				description: 'Send a text message',
+				action: 'Send a text message',
+			},
+			{
+				name: 'Send Video',
+				value: 'sendVideo',
+				description: 'Send a video with an optional caption',
+				action: 'Send a video',
 			},
 		],
 		default: 'sendText',
@@ -104,10 +105,10 @@ export const messageOperations: INodeProperties[] = [
 
 export const messageFields: INodeProperties[] = [
 	/* ---------------------------------------------------------------- */
-	/* Destino (todas as operações, exceto Marcar como Lida)            */
+	/* Recipient (every operation except Mark as Read)                  */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Para',
+		displayName: 'To',
 		name: 'to',
 		type: 'string',
 		required: true,
@@ -133,24 +134,24 @@ export const messageFields: INodeProperties[] = [
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Enviar Texto                                                     */
+	/* Send Text                                                        */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Mensagem',
+		displayName: 'Message',
 		name: 'message',
 		type: 'string',
 		required: true,
 		default: '',
 		typeOptions: { rows: 4 },
-		description: 'Texto da mensagem',
+		description: 'Text of the message',
 		displayOptions: { show: { resource: ['message'], operation: ['sendText'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Mídia (imagem, vídeo, áudio, documento, figurinha)              */
+	/* Media (image, video, audio, document, sticker)                   */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Fonte da Mídia',
+		displayName: 'Media Source',
 		name: 'mediaSource',
 		type: 'options',
 		noDataExpression: true,
@@ -158,90 +159,90 @@ export const messageFields: INodeProperties[] = [
 			{
 				name: 'URL',
 				value: 'url',
-				description: 'URL pública do arquivo; o GO baixa (até 64 MB)',
+				description: 'Public URL of the file, downloaded by Ignite GO (up to 64 MB)',
 			},
 			{
 				name: 'Base64',
 				value: 'base64',
-				description: 'Conteúdo em base64, com ou sem o prefixo data:...;base64,',
+				description: 'File content in base64, with or without the data:...;base64, prefix',
 			},
 			{
-				name: 'Binário de Entrada',
+				name: 'Binary File',
 				value: 'binary',
-				description: 'Arquivo binário vindo do nó anterior, convertido para base64',
+				description: 'Binary file from the previous node, converted to base64',
 			},
 		],
 		default: 'url',
 		displayOptions: { show: { resource: ['message'], operation: MEDIA_OPERATIONS } },
 	},
 	{
-		displayName: 'URL da Mídia',
+		displayName: 'Media URL',
 		name: 'mediaUrl',
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'https://exemplo.com/foto.jpg',
-		description: 'URL pública do arquivo',
+		placeholder: 'https://example.com/photo.jpg',
+		description: 'Public URL of the file',
 		displayOptions: {
 			show: { resource: ['message'], operation: MEDIA_OPERATIONS, mediaSource: ['url'] },
 		},
 	},
 	{
-		displayName: 'Conteúdo Base64',
+		displayName: 'Base64 Content',
 		name: 'mediaBase64',
 		type: 'string',
 		required: true,
 		default: '',
 		typeOptions: { rows: 3 },
-		description: 'Conteúdo do arquivo em base64, com ou sem o prefixo data:...;base64,',
+		description: 'File content in base64, with or without the data:...;base64, prefix',
 		displayOptions: {
 			show: { resource: ['message'], operation: MEDIA_OPERATIONS, mediaSource: ['base64'] },
 		},
 	},
 	{
-		displayName: 'Propriedade Binária',
+		displayName: 'Input Binary Field',
 		name: 'binaryPropertyName',
 		type: 'string',
 		required: true,
 		default: 'data',
-		description: 'Nome da propriedade binária do item de entrada que contém o arquivo',
+		description: 'Name of the binary field of the input item that contains the file',
 		displayOptions: {
 			show: { resource: ['message'], operation: MEDIA_OPERATIONS, mediaSource: ['binary'] },
 		},
 	},
 	{
-		displayName: 'Nome do Arquivo',
+		displayName: 'File Name',
 		name: 'fileName',
 		type: 'string',
 		default: '',
-		placeholder: 'contrato.pdf',
+		placeholder: 'contract.pdf',
 		description:
-			'Nome do arquivo exibido no WhatsApp. Obrigatório para documento; com fonte binária, vazio usa o nome do arquivo do binário.',
+			'File name shown in WhatsApp. Required for documents. With a binary source, leave it empty to use the file name of the binary data.',
 		displayOptions: { show: { resource: ['message'], operation: ['sendDocument'] } },
 	},
 	{
-		displayName: 'Legenda',
+		displayName: 'Caption',
 		name: 'caption',
 		type: 'string',
 		default: '',
 		typeOptions: { rows: 2 },
-		description: 'Legenda da mídia (opcional)',
+		description: 'Caption of the media (optional)',
 		displayOptions: {
 			show: { resource: ['message'], operation: ['sendImage', 'sendVideo', 'sendDocument'] },
 		},
 	},
 	{
-		displayName: 'Nota de Voz (PTT)',
+		displayName: 'Voice Note (PTT)',
 		name: 'ptt',
 		type: 'boolean',
 		default: true,
 		description:
-			'Ligado, envia como nota de voz (PTT). Desligado, vai como arquivo de áudio.',
+			'Whether to send the audio as a voice note (PTT). When off, it is sent as an audio file.',
 		displayOptions: { show: { resource: ['message'], operation: ['sendAudio'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Enviar Localização                                              */
+	/* Send Location                                                    */
 	/* ---------------------------------------------------------------- */
 	{
 		displayName: 'Latitude',
@@ -251,7 +252,7 @@ export const messageFields: INodeProperties[] = [
 		default: 0,
 		typeOptions: { numberPrecision: 7, minValue: -90, maxValue: 90 },
 		placeholder: '-23.5505',
-		description: 'Latitude em graus decimais',
+		description: 'Latitude in decimal degrees',
 		displayOptions: { show: { resource: ['message'], operation: ['sendLocation'] } },
 	},
 	{
@@ -262,65 +263,65 @@ export const messageFields: INodeProperties[] = [
 		default: 0,
 		typeOptions: { numberPrecision: 7, minValue: -180, maxValue: 180 },
 		placeholder: '-46.6333',
-		description: 'Longitude em graus decimais',
+		description: 'Longitude in decimal degrees',
 		displayOptions: { show: { resource: ['message'], operation: ['sendLocation'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Enviar Contato                                                  */
+	/* Send Contact                                                     */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Nome do Contato',
+		displayName: 'Contact Name',
 		name: 'contactName',
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'Fulano de Tal',
-		description: 'Nome exibido no cartão de contato',
+		placeholder: 'John Doe',
+		description: 'Name shown on the contact card',
 		displayOptions: { show: { resource: ['message'], operation: ['sendContact'] } },
 	},
 	{
-		displayName: 'Telefone do Contato',
+		displayName: 'Contact Phone',
 		name: 'contactPhone',
 		type: 'string',
 		required: true,
 		default: '',
 		placeholder: '5511988887777',
 		description:
-			'Telefone com DDI e DDD, usado para montar o vCard. Ignorado se você informar um vCard pronto nas opções.',
+			'Phone number with country and area code, used to build the vCard. Ignored when you provide a custom vCard in the options.',
 		displayOptions: { show: { resource: ['message'], operation: ['sendContact'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Enviar Enquete                                                  */
+	/* Send Poll                                                        */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Pergunta',
+		displayName: 'Question',
 		name: 'pollName',
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'Qual horário?',
-		description: 'Título da enquete',
+		placeholder: 'Which time works best?',
+		description: 'Title of the poll',
 		displayOptions: { show: { resource: ['message'], operation: ['sendPoll'] } },
 	},
 	{
-		displayName: 'Opções da Enquete',
+		displayName: 'Poll Options',
 		name: 'pollOptions',
 		type: 'fixedCollection',
 		required: true,
 		default: {},
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		typeOptions: { multipleValues: true },
-		description: 'Opções de resposta (pelo menos 2)',
+		description: 'Answer options (at least 2)',
 		displayOptions: { show: { resource: ['message'], operation: ['sendPoll'] } },
 		options: [
 			{
-				displayName: 'Opção',
+				displayName: 'Option',
 				name: 'values',
 				values: [
 					{
-						displayName: 'Texto da Opção',
+						displayName: 'Option Text',
 						name: 'option',
 						type: 'string',
 						default: '',
@@ -330,41 +331,41 @@ export const messageFields: INodeProperties[] = [
 		],
 	},
 	{
-		displayName: 'Máximo de Escolhas',
+		displayName: 'Max Selections',
 		name: 'selectableCount',
 		type: 'number',
 		default: 1,
 		typeOptions: { minValue: 1 },
-		description: 'Quantas opções cada pessoa pode marcar',
+		description: 'How many options each person can select',
 		displayOptions: { show: { resource: ['message'], operation: ['sendPoll'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Enviar Link com Prévia                                          */
+	/* Send Link                                                        */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Texto',
+		displayName: 'Text',
 		name: 'linkText',
 		type: 'string',
 		required: true,
 		default: '',
 		typeOptions: { rows: 3 },
-		placeholder: 'Veja: https://exemplo.com/oferta',
-		description: 'Texto da mensagem, com o link',
+		placeholder: 'See: https://example.com/offer',
+		description: 'Text of the message, including the link',
 		displayOptions: { show: { resource: ['message'], operation: ['sendLink'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Reagir, Editar, Apagar                                          */
+	/* React, Edit, Delete                                              */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'ID da Mensagem',
+		displayName: 'Message ID',
 		name: 'messageId',
 		type: 'string',
 		required: true,
 		default: '',
 		placeholder: '3EB0C431D5F2A1B2C3D4',
-		description: 'ID da mensagem alvo (message_id / messageId do evento)',
+		description: 'ID of the target message (message_id or messageId in the event)',
 		displayOptions: { show: { resource: ['message'], operation: ['react', 'edit', 'delete'] } },
 	},
 	{
@@ -372,210 +373,211 @@ export const messageFields: INodeProperties[] = [
 		name: 'emoji',
 		type: 'string',
 		default: '',
-		description: 'Emoji da reação. Vazio remove a reação.',
+		description: 'Emoji of the reaction. Leave it empty to remove the reaction.',
 		displayOptions: { show: { resource: ['message'], operation: ['react'] } },
 	},
 	{
-		displayName: 'Mensagem Enviada por Mim',
+		displayName: 'From Me',
 		name: 'fromMe',
 		type: 'boolean',
 		default: false,
 		description:
-			'Ligado quando a mensagem alvo foi enviada por esta instância (from_me). Precisa estar certo para o WhatsApp associar a reação à mensagem.',
+			'Whether the target message was sent by this instance (from_me). It must be correct for WhatsApp to attach the reaction to the message.',
 		displayOptions: { show: { resource: ['message'], operation: ['react'] } },
 	},
 	{
-		displayName: 'Novo Texto',
+		displayName: 'New Text',
 		name: 'newText',
 		type: 'string',
 		required: true,
 		default: '',
 		typeOptions: { rows: 3 },
-		description: 'Texto que substitui o da mensagem',
+		description: 'Text that replaces the text of the message',
 		displayOptions: { show: { resource: ['message'], operation: ['edit'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Marcar como Lida                                                */
+	/* Mark as Read                                                     */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Conversa',
+		displayName: 'Chat',
 		name: 'chat',
 		type: 'string',
 		required: true,
 		default: '',
 		placeholder: '5511999999999@s.whatsapp.net',
 		description:
-			'Conversa das mensagens: número com DDI e DDD ou JID completo (grupo termina em @g.us)',
+			'Chat of the messages: number with country and area code, or full JID (groups end in @g.us)',
 		displayOptions: { show: { resource: ['message'], operation: ['markAsRead'] } },
 	},
 	{
-		displayName: 'IDs das Mensagens',
+		displayName: 'Message IDs',
 		name: 'messageIds',
 		type: 'string',
 		required: true,
 		default: '',
 		placeholder: '3EB0C431D5F2A1B2C3D4, 3EB0C431D5F2A1B2C3D5',
 		description:
-			'IDs separados por vírgula, espaço ou quebra de linha. Também aceita uma lista (array) via expressão.',
+			'IDs separated by commas, spaces or line breaks. An array from an expression is also accepted.',
 		displayOptions: { show: { resource: ['message'], operation: ['markAsRead'] } },
 	},
 
 	/* ---------------------------------------------------------------- */
-	/* Opções adicionais                                               */
+	/* Additional options                                               */
 	/* ---------------------------------------------------------------- */
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'textOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: ['sendText'] } },
 		options: [
 			{
-				displayName: 'Responder à Mensagem (ID)',
+				displayName: 'Reply to Message ID',
 				name: 'replyTo',
 				type: 'string',
 				default: '',
-				description: 'ID da mensagem citada (quoted reply)',
+				description: 'ID of the message to quote (quoted reply)',
 			},
 		],
 	},
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'mediaOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: MEDIA_OPERATIONS } },
 		options: [
 			{
-				displayName: 'Responder à Mensagem (ID)',
-				name: 'replyTo',
-				type: 'string',
-				default: '',
-				description: 'ID da mensagem citada (quoted reply)',
-			},
-			{
-				displayName: 'Tipo MIME',
+				displayName: 'MIME Type',
 				name: 'mimeType',
 				type: 'string',
 				default: '',
 				placeholder: 'image/jpeg',
 				description:
-					'Tipo do arquivo. Vazio deixa o GO detectar; com fonte binária, vazio usa o tipo do binário.',
+					'Type of the file. Leave it empty to let Ignite GO detect it. With a binary source, empty uses the type of the binary data.',
+			},
+			{
+				displayName: 'Reply to Message ID',
+				name: 'replyTo',
+				type: 'string',
+				default: '',
+				description: 'ID of the message to quote (quoted reply)',
 			},
 		],
 	},
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'locationOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: ['sendLocation'] } },
 		options: [
 			{
-				displayName: 'Endereço',
+				displayName: 'Address',
 				name: 'address',
 				type: 'string',
 				default: '',
-				placeholder: 'Av. Paulista, 1000, São Paulo',
+				placeholder: '1000 Paulista Avenue, Sao Paulo',
 			},
 			{
-				displayName: 'Nome do Local',
+				displayName: 'Location Name',
 				name: 'name',
 				type: 'string',
 				default: '',
-				placeholder: 'Loja Paulista',
+				placeholder: 'Paulista Store',
 			},
 		],
 	},
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'contactOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: ['sendContact'] } },
 		options: [
 			{
-				displayName: 'vCard Pronto',
+				displayName: 'Custom vCard',
 				name: 'vcard',
 				type: 'string',
 				default: '',
 				typeOptions: { rows: 4 },
-				placeholder: 'BEGIN:VCARD\nVERSION:3.0\nFN:Fulano\nTEL:+5511988887777\nEND:VCARD',
-				description: 'Conteúdo do vCard completo. Quando preenchido, substitui o vCard montado com nome e telefone.',
+				placeholder: 'BEGIN:VCARD\nVERSION:3.0\nFN:John Doe\nTEL:+5511988887777\nEND:VCARD',
+				description:
+					'Full vCard content. When filled in, it replaces the vCard built from the contact name and phone.',
 			},
 		],
 	},
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'linkOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: ['sendLink'] } },
 		options: [
 			{
-				displayName: 'Descrição',
+				displayName: 'Description',
 				name: 'description',
 				type: 'string',
 				default: '',
-				description: 'Descrição exibida na prévia',
+				description: 'Description shown in the preview',
 			},
 			{
-				displayName: 'Título',
-				name: 'title',
-				type: 'string',
-				default: '',
-				description: 'Título exibido na prévia',
-			},
-			{
-				displayName: 'URL da Miniatura',
+				displayName: 'Thumbnail URL',
 				name: 'thumbnailUrl',
 				type: 'string',
 				default: '',
-				placeholder: 'https://exemplo.com/thumb.jpg',
-				description: 'Imagem exibida na prévia',
+				placeholder: 'https://example.com/thumb.jpg',
+				description: 'Image shown in the preview',
+			},
+			{
+				displayName: 'Title',
+				name: 'title',
+				type: 'string',
+				default: '',
+				description: 'Title shown in the preview',
 			},
 		],
 	},
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'reactOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: ['react'] } },
 		options: [
 			{
-				displayName: 'Participante (Grupo)',
+				displayName: 'Participant (Group)',
 				name: 'participant',
 				type: 'string',
 				default: '',
 				placeholder: '5511988887777@s.whatsapp.net',
 				description:
-					'Em grupo, quando a mensagem alvo é de outra pessoa: JID de quem enviou a mensagem',
+					'In groups, when the target message was sent by someone else: JID of the sender of that message',
 			},
 		],
 	},
 	{
-		displayName: 'Opções',
+		displayName: 'Options',
 		name: 'readOptions',
 		type: 'collection',
-		placeholder: 'Adicionar Opção',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: { show: { resource: ['message'], operation: ['markAsRead'] } },
 		options: [
 			{
-				displayName: 'Remetente (Grupo)',
+				displayName: 'Sender (Group)',
 				name: 'sender',
 				type: 'string',
 				default: '',
 				placeholder: '5511988887777@s.whatsapp.net',
-				description: 'Em grupo: JID de quem enviou as mensagens',
+				description: 'In groups: JID of the sender of the messages',
 			},
 		],
 	},

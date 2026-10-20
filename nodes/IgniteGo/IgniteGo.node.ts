@@ -6,8 +6,9 @@ import type {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	JsonObject,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { chatFields, chatOperations } from './descriptions/ChatDescription';
 import { groupFields, groupOperations } from './descriptions/GroupDescription';
@@ -15,7 +16,7 @@ import { instanceFields, instanceOperations } from './descriptions/InstanceDescr
 import { messageFields, messageOperations } from './descriptions/MessageDescription';
 import { compact, goErrorBody, goPathSegment, igniteGoApiRequest, toList } from './GenericFunctions';
 
-/** Rotas de mídia do GO por operação. */
+/** Ignite GO media route for each operation. */
 const MEDIA_ROUTES: Record<string, string> = {
 	sendImage: 'sendImage',
 	sendVideo: 'sendVideo',
@@ -24,10 +25,10 @@ const MEDIA_ROUTES: Record<string, string> = {
 	sendSticker: 'sendSticker',
 };
 
-/** Operações de mídia em que o GO usa a legenda. */
+/** Media operations where Ignite GO uses the caption. */
 const CAPTION_OPERATIONS = ['sendImage', 'sendVideo', 'sendDocument'];
 
-/** Presença no chat: rótulo do nó para os campos state/media do GO. */
+/** Chat presence: node option mapped to the Ignite GO state/media fields. */
 const PRESENCE_MAP: Record<string, { state: string; media: string }> = {
 	composing: { state: 'composing', media: 'text' },
 	recording: { state: 'composing', media: 'audio' },
@@ -50,12 +51,12 @@ export class IgniteGo implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Ignite GO',
 		name: 'igniteGo',
-		icon: 'file:ignitego.svg',
+		icon: { light: 'file:ignitego.svg', dark: 'file:ignitego.dark.svg' },
 		group: ['output'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description:
-			'Envia mensagens e consulta conversas, instância e grupos no Ignite GO (API de WhatsApp)',
+			'Send WhatsApp messages and work with chats, instances and groups in Ignite GO',
 		defaults: {
 			name: 'Ignite GO',
 		},
@@ -70,15 +71,15 @@ export class IgniteGo implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Recurso',
+				displayName: 'Resource',
 				name: 'resource',
 				type: 'options',
 				noDataExpression: true,
 				options: [
-					{ name: 'Conversa', value: 'chat' },
-					{ name: 'Grupo', value: 'group' },
-					{ name: 'Instância', value: 'instance' },
-					{ name: 'Mensagem', value: 'message' },
+					{ name: 'Chat', value: 'chat' },
+					{ name: 'Group', value: 'group' },
+					{ name: 'Instance', value: 'instance' },
+					{ name: 'Message', value: 'message' },
 				],
 				default: 'message',
 			},
@@ -87,14 +88,14 @@ export class IgniteGo implements INodeType {
 			...instanceOperations,
 			...groupOperations,
 			{
-				displayName: 'Instância',
+				displayName: 'Instance',
 				name: 'instance',
 				type: 'string',
 				required: true,
 				default: '',
-				placeholder: 'minha-loja',
+				placeholder: 'my-store',
 				description:
-					'Nome ou ID da instância no GO. Com o token de instância na credencial, precisa ser a instância dona do token.',
+					'Name or ID of the Ignite GO instance. With an instance token in the credential, it must be the instance that owns the token.',
 			},
 			...messageFields,
 			...chatFields,
@@ -113,7 +114,7 @@ export class IgniteGo implements INodeType {
 				const operation = this.getNodeParameter('operation', i) as string;
 				const instanceRef = String(this.getNodeParameter('instance', i, '')).trim();
 				if (instanceRef === '') {
-					throw new NodeOperationError(this.getNode(), 'Informe a instância (nome ou ID)', {
+					throw new NodeOperationError(this.getNode(), 'Enter the instance (name or ID)', {
 						itemIndex: i,
 					});
 				}
@@ -164,7 +165,7 @@ export class IgniteGo implements INodeType {
 						if (operation === 'sendDocument' && fileName === '') {
 							throw new NodeOperationError(
 								this.getNode(),
-								'Nome do arquivo é obrigatório para enviar documento',
+								'File name is required to send a document',
 								{ itemIndex: i },
 							);
 						}
@@ -213,7 +214,7 @@ export class IgniteGo implements INodeType {
 							.map((v) => String(v.option ?? '').trim())
 							.filter((v) => v !== '');
 						if (options.length < 2) {
-							throw new NodeOperationError(this.getNode(), 'A enquete precisa de pelo menos 2 opções', {
+							throw new NodeOperationError(this.getNode(), 'A poll needs at least 2 options', {
 								itemIndex: i,
 							});
 						}
@@ -262,7 +263,7 @@ export class IgniteGo implements INodeType {
 						const options = this.getNodeParameter('readOptions', i, {}) as IDataObject;
 						const messageIds = toList(this.getNodeParameter('messageIds', i));
 						if (messageIds.length === 0) {
-							throw new NodeOperationError(this.getNode(), 'Informe pelo menos um ID de mensagem', {
+							throw new NodeOperationError(this.getNode(), 'Enter at least one message ID', {
 								itemIndex: i,
 							});
 						}
@@ -274,7 +275,7 @@ export class IgniteGo implements INodeType {
 						});
 						body.message_ids = messageIds;
 					} else {
-						throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`, {
+						throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
 							itemIndex: i,
 						});
 					}
@@ -282,7 +283,7 @@ export class IgniteGo implements INodeType {
 					if (operation === 'checkNumbers') {
 						const phones = toList(this.getNodeParameter('phones', i));
 						if (phones.length === 0) {
-							throw new NodeOperationError(this.getNode(), 'Informe pelo menos um número', {
+							throw new NodeOperationError(this.getNode(), 'Enter at least one phone number', {
 								itemIndex: i,
 							});
 						}
@@ -297,7 +298,7 @@ export class IgniteGo implements INodeType {
 					} else if (operation === 'sendPresence') {
 						const presence = PRESENCE_MAP[this.getNodeParameter('presence', i) as string];
 						if (presence === undefined) {
-							throw new NodeOperationError(this.getNode(), 'Presença inválida', { itemIndex: i });
+							throw new NodeOperationError(this.getNode(), 'Invalid presence', { itemIndex: i });
 						}
 						method = 'POST';
 						path = `/presence/${inst}/chat`;
@@ -307,7 +308,7 @@ export class IgniteGo implements INodeType {
 							media: presence.media,
 						};
 					} else {
-						throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`, {
+						throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
 							itemIndex: i,
 						});
 					}
@@ -319,7 +320,7 @@ export class IgniteGo implements INodeType {
 						method = 'GET';
 						path = `/instance/${inst}/connect`;
 					} else {
-						throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`, {
+						throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
 							itemIndex: i,
 						});
 					}
@@ -335,12 +336,12 @@ export class IgniteGo implements INodeType {
 						path = `/group/${inst}/${group}/invite-link`;
 						if (this.getNodeParameter('reset', i, false) as boolean) qs = { reset: 'true' };
 					} else {
-						throw new NodeOperationError(this.getNode(), `Operação desconhecida: ${operation}`, {
+						throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
 							itemIndex: i,
 						});
 					}
 				} else {
-					throw new NodeOperationError(this.getNode(), `Recurso desconhecido: ${resource}`, {
+					throw new NodeOperationError(this.getNode(), `Unknown resource: ${resource}`, {
 						itemIndex: i,
 					});
 				}
@@ -348,7 +349,7 @@ export class IgniteGo implements INodeType {
 				const response = await igniteGoApiRequest.call(this, method, path, body, qs);
 				const responseBody = response.body;
 
-				// Conectar: opcionalmente entrega o QR (data URL PNG) como binário.
+				// Connect: optionally output the QR code (PNG data URL) as binary data.
 				if (
 					resource === 'instance' &&
 					operation === 'connect' &&
@@ -377,7 +378,7 @@ export class IgniteGo implements INodeType {
 				} else if (responseBody !== null && typeof responseBody === 'object') {
 					jsonItems = [responseBody as IDataObject];
 				} else if (responseBody === undefined || responseBody === null || responseBody === '') {
-					// 204 sem corpo (marcar como lida, presença).
+					// 204 without a body (mark as read, presence).
 					jsonItems = [{ success: true, statusCode: response.statusCode }];
 				} else {
 					jsonItems = [{ data: responseBody }];
@@ -399,7 +400,12 @@ export class IgniteGo implements INodeType {
 					returnData.push({ json: failure, pairedItem: { item: i } });
 					continue;
 				}
-				throw error;
+				if (error instanceof NodeApiError) {
+					if (error.context.itemIndex === undefined) error.context.itemIndex = i;
+					// Returns the same error: NodeApiError does not wrap itself again.
+					throw new NodeApiError(this.getNode(), error as unknown as JsonObject, { itemIndex: i });
+				}
+				throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
 			}
 		}
 

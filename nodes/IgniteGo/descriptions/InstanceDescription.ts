@@ -2,24 +2,24 @@ import type { INodeProperties } from 'n8n-workflow';
 
 export const instanceOperations: INodeProperties[] = [
 	{
-		displayName: 'Operação',
+		displayName: 'Operation',
 		name: 'operation',
 		type: 'options',
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['instance'] } },
 		options: [
 			{
-				name: 'Conectar',
+				name: 'Connect',
 				value: 'connect',
 				description:
-					'Inicia a conexão e devolve o status e o QR code quando houver. Chame de novo até virar connected.',
-				action: 'Conectar instância',
+					'Start the connection and return the status, plus the QR code when there is one. Call it again until the status is connected.',
+				action: 'Connect an instance',
 			},
 			{
-				name: 'Ver Instância',
+				name: 'Get',
 				value: 'get',
-				description: 'Detalhes, status da conexão e configurações da instância',
-				action: 'Ver instância',
+				description: 'Get instance details, connection status and settings',
+				action: 'Get an instance',
 			},
 		],
 		default: 'get',
@@ -28,12 +28,12 @@ export const instanceOperations: INodeProperties[] = [
 
 export const instanceFields: INodeProperties[] = [
 	{
-		displayName: 'QR Code como Binário',
+		displayName: 'QR Code as Binary',
 		name: 'qrAsBinary',
 		type: 'boolean',
 		default: false,
 		description:
-			'Ligado, também entrega o QR code como binário PNG (propriedade "qr") quando a API devolver um',
+			'Whether to also output the QR code as a PNG binary file (binary property "qr") when the API returns one',
 		displayOptions: { show: { resource: ['instance'], operation: ['connect'] } },
 	},
 ];

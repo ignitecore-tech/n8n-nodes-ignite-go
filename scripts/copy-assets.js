@@ -1,5 +1,6 @@
-// Copia ícones (svg/png) e arquivos de codex (*.node.json) de nodes/ e credentials/ para dist/,
-// mantendo a mesma estrutura de pastas. Faz o papel do "gulp build:icons" do n8n-nodes-starter.
+// Copies icons (svg/png, including the light and dark variants) and codex files (*.node.json) from
+// nodes/ and credentials/ to dist/, keeping the same folder structure. Plays the role of the
+// "gulp build:icons" step of n8n-nodes-starter.
 const fs = require('fs');
 const path = require('path');
 
@@ -26,4 +27,4 @@ function walk(relDir) {
 }
 
 for (const dir of sources) walk(dir);
-console.log(`copy-assets: ${copied} arquivo(s) copiado(s) para dist/`);
+console.log(`copy-assets: copied ${copied} file(s) to dist/`);

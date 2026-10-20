@@ -1,46 +1,51 @@
-# Publicar o pacote
+# Publishing the package
 
-Passo a passo para colocar o `n8n-nodes-ignite-go` no npm e pedir a verificação do n8n.
+Steps to publish `n8n-nodes-ignite-go` on npm and request the n8n verification.
 
-## Uma vez só
+## One-time setup
 
-1. **Repositório no GitHub.** Crie o repositório público `ignitecore-tech/n8n-nodes-ignite-go`, vazio (sem README nem licença), e suba o código:
+1. **GitHub repository.** The public repository is `ignitecore-tech/n8n-nodes-ignite-go`:
 
    ```bash
    git remote add origin https://github.com/ignitecore-tech/n8n-nodes-ignite-go.git
    git push -u origin main
    ```
 
-   Se o nome ou a organização mudarem, ajuste `repository`, `bugs` e `homepage` no `package.json`: o n8n confere que o repositório do pacote é o mesmo do GitHub.
+   If the name or the organization changes, update `repository`, `bugs` and `homepage` in `package.json`: n8n checks that the package repository is the same as the GitHub one.
 
-2. **Conta no npm.** Use uma conta (ou organização) da Ignite com verificação em duas etapas ligada. Gere um token em npmjs.com, Access Tokens, do tipo Granular, com permissão de leitura e escrita para publicar pacotes.
+2. **npm account.** Use an Ignite Core npm account (or organization) with two-factor authentication enabled. Create a token at npmjs.com, Access Tokens, of the Granular type, with read and write permission to publish packages.
 
-3. **Segredo no GitHub.** No repositório, Settings, Secrets and variables, Actions, crie o segredo `NPM_TOKEN` com esse token.
+3. **GitHub secret.** In the repository, Settings, Secrets and variables, Actions, create the `NPM_TOKEN` secret with that token.
 
-## Publicar uma versão
+## Publishing a version
 
-1. Confira que `npm run build` e `npm run lint` passam.
-2. Suba a versão e a tag juntas:
+1. Check that `npm run build`, `npm run lint` and `npm run lint:dist` pass with no errors and no warnings.
+2. Bump the version and push it together with the tag:
 
    ```bash
-   npm version patch        # 0.1.0 vira 0.1.1 (use minor ou major quando fizer sentido)
+   npm version patch        # 0.2.0 becomes 0.2.1 (use minor or major when it makes sense)
    git push --follow-tags
    ```
 
-   Para a primeira publicação, a versão do `package.json` já é `0.1.0`: basta `git tag v0.1.0` e `git push origin v0.1.0`.
+   If the version in `package.json` was already bumped by hand (for example `0.2.0`), just run `git tag v0.2.0` and `git push origin v0.2.0`.
 
-3. A Action "Publicar no npm" roda sozinha com a tag, confere que a tag bate com o `package.json`, faz build e lint e publica com provenance. Na página do pacote no npm aparece o selo de origem (Provenance).
+3. The "Publish to npm" Action runs on its own for the tag, checks that the tag matches `package.json`, builds, lints and publishes with provenance. The npm package page then shows the provenance badge.
 
-## Depois da primeira publicação
+## After publishing
 
-- **Conferir com o verificador do n8n:** `npx @n8n/scan-community-package n8n-nodes-ignite-go`.
-- **Pedir a verificação** (necessária para aparecer no n8n Cloud) pelo Creator Portal do n8n, a partir da página "Submit community nodes" da documentação.
-- **Opcional:** em npmjs.com, nas configurações do pacote, cadastrar o GitHub Actions deste repositório como Trusted Publisher. Com isso a Action publica sem o `NPM_TOKEN`.
-- **Landing page do Ignite GO:** a seção dos nós do n8n só pode ir ao ar depois que o pacote estiver publicado.
+- **Check with the n8n scanner:** `npx @n8n/scan-community-package n8n-nodes-ignite-go`. The scanner only checks what is on npm. It lints the source commit recorded in the provenance and the published tarball, with the same rules as `npm run lint` and `npm run lint:dist`. On Windows, run it from PowerShell with `C:\Windows\System32` first in `PATH`; from Git Bash its tar extraction fails on `C:\` paths.
+- **Request the verification** (required to show up on n8n Cloud) through the n8n Creator Portal, from the "Submit community nodes" page of the documentation.
+- **Optional:** at npmjs.com, in the package settings, add the GitHub Actions workflow of this repository as a Trusted Publisher. The Action can then publish without `NPM_TOKEN`.
+- **Ignite GO landing page:** the n8n nodes section can only go live after the package is published.
 
-## Regras do n8n que este pacote segue
+## Lint setup
 
-- Sem dependências em tempo de execução (só `n8n-workflow` como peer).
-- Sem leitura de variáveis de ambiente nem de arquivos no código dos nós.
-- Licença MIT e README.
-- Um serviço só (Ignite GO).
+`eslint.config.mjs` reproduces the configuration of the n8n scanner (`buildScanConfig` in `@n8n/scan-community-package` 0.39.0). The dev dependencies `eslint`, `@n8n/eslint-plugin-community-nodes` and `eslint-plugin-n8n-nodes-base` are pinned to the versions the scanner uses. When n8n releases a new scanner, compare its `package.json` and `scanner/scanner.mjs` and update both places.
+
+## n8n rules this package follows
+
+- No runtime dependencies (only `n8n-workflow` as a peer dependency).
+- No environment variables or file reads in the node code.
+- Node interface and documentation in English only.
+- MIT license and README.
+- A single service (Ignite GO).

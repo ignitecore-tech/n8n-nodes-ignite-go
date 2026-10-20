@@ -1,15 +1,15 @@
-name: Publicar no npm
+name: Publish to npm
 
-# Publica a versão do package.json quando sobe uma tag vX.Y.Z (ex.: v0.1.0).
-# O n8n só verifica nós publicados por GitHub Actions com provenance; publicar
-# do computador com "npm publish" não vale para o selo de verificado.
+# Publishes the package.json version when a vX.Y.Z tag is pushed (e.g. v0.2.0).
+# n8n only verifies nodes published from GitHub Actions with provenance; running
+# "npm publish" from a local machine does not count for the verified badge.
 on:
   push:
     tags: ['v*']
 
 permissions:
   contents: read
-  id-token: write # assinatura de origem (provenance) via OIDC do GitHub
+  id-token: write # provenance signature through GitHub OIDC
 
 jobs:
   publish:
@@ -25,18 +25,19 @@ jobs:
 
       - run: npm ci
 
-      - name: Tag igual à versão do package.json
+      - name: Tag matches the package.json version
         run: |
           v="$(node -p "require('./package.json').version")"
           if [ "v$v" != "$GITHUB_REF_NAME" ]; then
-            echo "A tag $GITHUB_REF_NAME não bate com a versão $v do package.json."
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $v."
             exit 1
           fi
 
       - run: npm run build
       - run: npm run lint
+      - run: npm run lint:dist
 
-      - name: Publicar com provenance
+      - name: Publish with provenance
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

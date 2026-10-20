@@ -41,7 +41,7 @@ function instancePath(this: IHookFunctions, stored?: unknown): string {
 			? stored
 			: String(this.getNodeParameter('instance', '')).trim();
 	if (ref === '') {
-		throw new NodeOperationError(this.getNode(), 'Informe a instância (nome ou ID)');
+		throw new NodeOperationError(this.getNode(), 'Enter the instance (name or ID)');
 	}
 	return goPathSegment(ref);
 }
@@ -50,12 +50,12 @@ export class IgniteGoTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Ignite GO Trigger',
 		name: 'igniteGoTrigger',
-		icon: 'file:ignitego.svg',
+		icon: { light: 'file:ignitego.svg', dark: 'file:ignitego.dark.svg' },
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{($parameter["events"] || []).join(", ")}}',
 		description:
-			'Inicia o workflow quando o Ignite GO envia um evento da instância (mensagem recebida, status, conexão e outros)',
+			'Starts the workflow when Ignite GO sends an instance event (message received, message status, connection and more)',
 		defaults: {
 			name: 'Ignite GO Trigger',
 		},
@@ -77,39 +77,39 @@ export class IgniteGoTrigger implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Instância',
+				displayName: 'Instance',
 				name: 'instance',
 				type: 'string',
 				required: true,
 				default: '',
-				placeholder: 'minha-loja',
+				placeholder: 'my-store',
 				description:
-					'Nome ou ID da instância no GO. Com o token de instância na credencial, precisa ser a instância dona do token.',
+					'Name or ID of the Ignite GO instance. With an instance token in the credential, it must be the instance that owns the token.',
 			},
 			{
-				displayName: 'Eventos',
+				displayName: 'Events',
 				name: 'events',
 				type: 'multiOptions',
 				required: true,
 				options: WEBHOOK_EVENTS,
 				default: ['message.received'],
 				description:
-					'Eventos que disparam o workflow. Ao ativar, o nó cadastra um webhook na instância com esses eventos e um segredo próprio; ao desativar, apaga o webhook.',
+					'Events that trigger the workflow. On activation, the node registers a webhook on the instance with these events and its own secret. On deactivation, it deletes the webhook.',
 			},
 			{
-				displayName: 'Opções',
+				displayName: 'Options',
 				name: 'options',
 				type: 'collection',
-				placeholder: 'Adicionar Opção',
+				placeholder: 'Add Option',
 				default: {},
 				options: [
 					{
-						displayName: 'Incluir Mídia em Base64',
+						displayName: 'Include Media as Base64',
 						name: 'webhookBase64',
 						type: 'boolean',
 						default: false,
 						description:
-							'Ligado, os eventos message.received e message.sent trazem o arquivo da mídia em base64 (bloco media). Deixa o corpo bem maior.',
+							'Whether message.received and message.sent events include the media file in base64 (media block). This makes the payload much larger.',
 					},
 				],
 			},
@@ -139,8 +139,8 @@ export class IgniteGoTrigger implements INodeType {
 						found = true;
 						continue;
 					}
-					// Webhook com a URL deste nó mas sem segredo conhecido, com eventos antigos ou
-					// duplicado: apaga para o create() cadastrar um novo, assinado.
+					// Webhook with this node's URL but without a known secret, with outdated events or
+					// duplicated: delete it so create() registers a new, signed one.
 					await igniteGoApiRequest.call(this, 'DELETE', `/webhook/${inst}/${goPathSegment(hook.id)}`);
 				}
 				return found;
@@ -171,7 +171,7 @@ export class IgniteGoTrigger implements INodeType {
 				if (!created || typeof created.id !== 'string' || created.id === '') {
 					throw new NodeOperationError(
 						this.getNode(),
-						'O GO não devolveu o ID do webhook criado',
+						'Ignite GO did not return the ID of the created webhook',
 					);
 				}
 
@@ -192,7 +192,7 @@ export class IgniteGoTrigger implements INodeType {
 							`/webhook/${inst}/${goPathSegment(webhookData.webhookId)}`,
 						);
 					} catch (error) {
-						// 404: o webhook já não existe no GO, segue limpando o estado local.
+						// 404: the webhook no longer exists in Ignite GO, so keep clearing the local state.
 						const httpCode = String((error as { httpCode?: unknown }).httpCode ?? '');
 						if (httpCode !== '404') return false;
 					}
@@ -218,7 +218,7 @@ export class IgniteGoTrigger implements INodeType {
 		};
 
 		if (secret === '') {
-			return reject('webhook sem segredo cadastrado no n8n; desative e ative o workflow');
+			return reject('no webhook secret stored in n8n; deactivate and activate the workflow again');
 		}
 
 		if (!req.rawBody && typeof req.readRawBody === 'function') {
@@ -226,7 +226,7 @@ export class IgniteGoTrigger implements INodeType {
 		}
 		const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody : undefined;
 		if (rawBody === undefined) {
-			return reject('corpo bruto indisponível para conferir a assinatura');
+			return reject('raw body not available to verify the signature');
 		}
 
 		const received = String(headers['x-webhook-signature'] ?? '');
@@ -235,7 +235,7 @@ export class IgniteGoTrigger implements INodeType {
 			received.length === expected.length &&
 			timingSafeEqual(Buffer.from(received), Buffer.from(expected));
 		if (!valid) {
-			return reject('assinatura X-Webhook-Signature inválida');
+			return reject('invalid X-Webhook-Signature signature');
 		}
 
 		let body: IDataObject = {};

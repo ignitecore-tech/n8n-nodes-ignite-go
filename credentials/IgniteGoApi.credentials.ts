@@ -1,31 +1,41 @@
-import type { IAuthenticateGeneric, Icon, ICredentialType, INodeProperties } from 'n8n-workflow';
+import type {
+	IAuthenticateGeneric,
+	Icon,
+	ICredentialTestRequest,
+	ICredentialType,
+	INodeProperties,
+} from 'n8n-workflow';
 
 /**
- * Credencial do Ignite GO.
+ * Ignite GO credential.
  *
- * A autenticação vai no header `apikey`. Não há teste de credencial: a única rota que valida
- * chave sem instância (/auth/me) aceita só a chave de organização e recusa o token de
- * instância, que é a credencial mais comum. Um teste ali daria falso erro para quem usa o token.
+ * The key is sent in the `apikey` header. The test calls GET /auth/check, which accepts both an
+ * instance token and a company API key: 200 for a valid key, 401 for an invalid one and 403 when
+ * the account is suspended. n8n 2.10 loses the HTTP response before it checks the rules below and
+ * then shows its default 401/403 messages, which are still clear.
  */
 export class IgniteGoApi implements ICredentialType {
 	name = 'igniteGoApi';
 
 	displayName = 'Ignite GO API';
 
-	icon: Icon = 'file:../nodes/IgniteGo/ignitego.svg';
+	icon: Icon = {
+		light: 'file:../nodes/IgniteGo/ignitego.svg',
+		dark: 'file:../nodes/IgniteGo/ignitego.dark.svg',
+	};
 
 	documentationUrl = 'https://www.npmjs.com/package/n8n-nodes-ignite-go';
 
 	properties: INodeProperties[] = [
 		{
-			displayName: 'URL Do Servidor',
+			displayName: 'Server URL',
 			name: 'serverUrl',
 			type: 'string',
 			default: 'https://api.ignitecore.com.br',
 			placeholder: 'https://api.ignitecore.com.br',
 			required: true,
 			description:
-				'Endereço do servidor Ignite GO, sem barra no final. Troque só se a sua conta usar outro endereço.',
+				'Address of the Ignite GO server, without a trailing slash. Change it only if your account uses a different address.',
 		},
 		{
 			displayName: 'API Key',
@@ -35,7 +45,7 @@ export class IgniteGoApi implements ICredentialType {
 			default: '',
 			required: true,
 			description:
-				'Token da instância, que aparece no painel do GO (Dashboard, botão Token) e opera só aquela instância. Também aceita a api_key da organização, que opera qualquer instância da org.',
+				'Instance token from the Ignite GO panel (instance Dashboard, Token button), which works only with that instance. The company API key is also accepted and works with any instance of the company.',
 		},
 	];
 
@@ -46,5 +56,29 @@ export class IgniteGoApi implements ICredentialType {
 				apikey: '={{$credentials.apiKey}}',
 			},
 		},
+	};
+
+	test: ICredentialTestRequest = {
+		request: {
+			method: 'GET',
+			url: '={{$credentials.serverUrl.trim().replace(new RegExp("/+$"), "")}}/auth/check',
+		},
+		rules: [
+			{
+				type: 'responseCode',
+				properties: {
+					value: 401,
+					message:
+						'Invalid API key. Copy the instance token or the company API key again from the Ignite GO panel.',
+				},
+			},
+			{
+				type: 'responseCode',
+				properties: {
+					value: 403,
+					message: 'This Ignite GO account is suspended. Contact Ignite Core support.',
+				},
+			},
+		],
 	};
 }

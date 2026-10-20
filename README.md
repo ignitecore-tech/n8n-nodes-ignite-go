@@ -1,26 +1,26 @@
 # n8n-nodes-ignite-go
 
-Nós da comunidade do n8n para o **Ignite GO**, a API de WhatsApp da Ignite Core.
+n8n community nodes for **Ignite GO**, the WhatsApp API by Ignite Core.
 
-O pacote traz:
+The package includes:
 
-- **Ignite GO**: nó de ação para enviar mensagens (texto, mídia, localização, contato, enquete, link com prévia), reagir, editar, apagar, marcar como lida, validar números, buscar foto de perfil, mostrar "digitando", ver e conectar a instância e consultar grupos.
-- **Ignite GO Trigger**: inicia o workflow quando a instância recebe um evento (mensagem recebida, status de entrega, conexão e outros). Ao ativar o workflow, o nó cadastra sozinho um webhook na instância; ao desativar, apaga. Cada entrega é conferida pela assinatura HMAC.
-- **Ignite GO API**: credencial com a URL do servidor e a chave.
+- **Ignite GO**: action node to send messages (text, media, location, contact, poll, link with preview), react, edit, delete, mark as read, check numbers, get profile pictures, show "typing", get and connect the instance, and get groups.
+- **Ignite GO Trigger**: starts the workflow when the instance receives an event (message received, delivery status, connection and more). When the workflow is activated, the node registers a webhook on the instance by itself; when it is deactivated, the node deletes it. Every delivery is verified with an HMAC signature.
+- **Ignite GO API**: credential with the server URL and the key.
 
-## Instalação
+## Installation
 
-### Pelo painel do n8n (recomendado)
+### From the n8n panel (recommended)
 
-1. Abra **Settings > Community Nodes**.
-2. Clique em **Install**.
-3. Digite `n8n-nodes-ignite-go` e confirme.
+1. Open **Settings > Community Nodes**.
+2. Click **Install**.
+3. Enter `n8n-nodes-ignite-go` and confirm.
 
-Depois disso os nós aparecem na busca como "Ignite GO" e "Ignite GO Trigger".
+The nodes then show up in the node search as "Ignite GO" and "Ignite GO Trigger".
 
-### n8n self-hosted em Docker, sem o painel
+### n8n in Docker, without the panel
 
-Se a instalação pelo painel estiver desligada, instale o pacote numa pasta de extensões e aponte o n8n para ela com `N8N_CUSTOM_EXTENSIONS`:
+If installing from the panel is disabled, install the package in an extensions folder and point n8n to it with `N8N_CUSTOM_EXTENSIONS`:
 
 ```bash
 mkdir -p /opt/n8n-extensions && cd /opt/n8n-extensions
@@ -28,7 +28,7 @@ npm pack n8n-nodes-ignite-go
 tar -xzf n8n-nodes-ignite-go-*.tgz && mv package n8n-nodes-ignite-go
 ```
 
-No `docker-compose.yml` do n8n:
+In the n8n `docker-compose.yml`:
 
 ```yaml
 services:
@@ -39,141 +39,142 @@ services:
       - /opt/n8n-extensions:/home/node/extensions
 ```
 
-Reinicie o container. Instalado assim, o tipo do nó fica com o prefixo `CUSTOM.` em vez de `n8n-nodes-ignite-go.`; workflows exportados de um jeito não abrem direto no outro.
+Restart the container. Installed this way, the node type gets the `CUSTOM.` prefix instead of `n8n-nodes-ignite-go.`, so workflows exported from one setup do not open directly in the other.
 
-## Credencial
+## Credential
 
-Crie uma credencial **Ignite GO API**:
+Create an **Ignite GO API** credential:
 
-| Campo | O que colocar |
+| Field | What to enter |
 | --- | --- |
-| URL do Servidor | Endereço do GO, sem barra no final. Padrão: `https://api.ignitecore.com.br`. Troque só se a sua conta usar outro endereço. |
-| API Key | O **token da instância** ou a **api_key da organização**. |
+| Server URL | Address of the Ignite GO server, without a trailing slash. Default: `https://api.ignitecore.com.br`. Change it only if your account uses a different address. |
+| API Key | The **instance token** or the **company API key**, both from the Ignite GO panel. |
 
-Onde achar a chave:
+Where to find the key:
 
-- **Token da instância**: no painel do GO, entre na instância e abra o **Dashboard**; o botão **Token** mostra e copia o token. Ele também vem na resposta do `POST /instance`. Opera só aquela instância, então o campo **Instância** dos nós precisa ser ela (nome ou ID).
-- **api_key da organização**: entregue pelo administrador da plataforma. Opera qualquer instância da organização.
+- **Instance token**: in the Ignite GO panel, open the instance and go to its **Dashboard**; the **Token** button shows and copies the token. It is also returned by `POST /instance`. It works only with that instance, so the **Instance** field of the nodes must be that instance (name or ID).
+- **Company API key**: the key of your company account in Ignite GO. It works with any instance of the company.
 
-A chave vai no header `apikey` em todas as chamadas. A credencial não tem botão de teste: a única rota do GO que valida chave sem instância aceita só a chave de organização e recusaria o token de instância. Para conferir, rode a operação **Instância > Ver Instância**.
+The key is sent in the `apikey` header on every call. When you save the credential, n8n tests it with `GET /auth/check`, which accepts both kinds of key. The test fails with an authorization error when the key is invalid (401) and with a forbidden error when the account is suspended (403).
 
-## Campo "Para"
+## "To" field
 
-- Pessoa: só o número, com DDI e DDD, sem `+` nem espaços. Exemplo: `5511999999999`.
-- Grupo: o JID completo, terminado em `@g.us`. Exemplo: `120363012345678901@g.us`.
-- Também aceita JID completo `@s.whatsapp.net`, `@lid` ou `@newsletter`.
+- Person: only the number, with country and area code, without `+` or spaces. Example: `5511999999999`.
+- Group: the full JID, ending in `@g.us`. Example: `120363012345678901@g.us`.
+- Full JIDs ending in `@s.whatsapp.net`, `@lid` or `@newsletter` are also accepted.
 
-## Operações do nó Ignite GO
+## Ignite GO node operations
 
-Todas usam o campo **Instância** (nome ou ID) e devolvem o JSON da API. Os envios devolvem `{ message_id, timestamp, status }`. Rotas que respondem 204 viram `{ success: true, statusCode: 204 }`.
+Every operation uses the **Instance** field (name or ID) and returns the API JSON. Send operations return `{ message_id, timestamp, status }`. Routes that answer 204 become `{ success: true, statusCode: 204 }`.
 
-### Mensagem
+### Message
 
-| Operação | Rota no GO | Campos |
+| Operation | Ignite GO route | Fields |
 | --- | --- | --- |
-| Enviar Texto | `POST /message/{instância}/sendText` | para, mensagem, responder à mensagem (opcional) |
-| Enviar Imagem | `POST /message/{instância}/sendImage` | para, mídia, legenda, tipo MIME, responder |
-| Enviar Vídeo | `POST /message/{instância}/sendVideo` | para, mídia, legenda, tipo MIME, responder |
-| Enviar Áudio | `POST /message/{instância}/sendAudio?ptt=true\|false` | para, mídia, nota de voz (PTT), tipo MIME, responder |
-| Enviar Documento | `POST /message/{instância}/sendDocument` | para, mídia, nome do arquivo, legenda, tipo MIME, responder |
-| Enviar Figurinha | `POST /message/{instância}/sendSticker` | para, mídia (WebP), tipo MIME, responder |
-| Enviar Localização | `POST /message/{instância}/sendLocation` | para, latitude, longitude, nome do local, endereço |
-| Enviar Contato | `POST /message/{instância}/sendContact` | para, nome e telefone (o nó monta o vCard) ou vCard pronto |
-| Enviar Enquete | `POST /message/{instância}/sendPoll` | para, pergunta, opções (pelo menos 2), máximo de escolhas |
-| Enviar Link com Prévia | `POST /message/{instância}/sendLink` | para, texto, título, descrição, URL da miniatura |
-| Reagir | `POST /message/{instância}/sendReaction` | para, ID da mensagem, emoji (vazio remove), enviada por mim (`from_me`), participante em grupo |
-| Editar | `PUT /message/{instância}/{id}/edit` | para, ID da mensagem, novo texto (até cerca de 15 minutos após o envio) |
-| Apagar | `DELETE /message/{instância}/{id}` | para, ID da mensagem (apaga para todos) |
-| Marcar como Lida | `POST /message/{instância}/read` | conversa, IDs das mensagens, remetente em grupo |
+| Send Text | `POST /message/{instance}/sendText` | to, message, reply to message ID (optional) |
+| Send Image | `POST /message/{instance}/sendImage` | to, media, caption, MIME type, reply to |
+| Send Video | `POST /message/{instance}/sendVideo` | to, media, caption, MIME type, reply to |
+| Send Audio | `POST /message/{instance}/sendAudio?ptt=true\|false` | to, media, voice note (PTT), MIME type, reply to |
+| Send Document | `POST /message/{instance}/sendDocument` | to, media, file name, caption, MIME type, reply to |
+| Send Sticker | `POST /message/{instance}/sendSticker` | to, media (WebP), MIME type, reply to |
+| Send Location | `POST /message/{instance}/sendLocation` | to, latitude, longitude, location name, address |
+| Send Contact | `POST /message/{instance}/sendContact` | to, name and phone (the node builds the vCard) or a custom vCard |
+| Send Poll | `POST /message/{instance}/sendPoll` | to, question, options (at least 2), max selections |
+| Send Link | `POST /message/{instance}/sendLink` | to, text, title, description, thumbnail URL |
+| React | `POST /message/{instance}/sendReaction` | to, message ID, emoji (empty removes it), from me (`from_me`), participant in groups |
+| Edit | `PUT /message/{instance}/{id}/edit` | to, message ID, new text (up to about 15 minutes after sending) |
+| Delete | `DELETE /message/{instance}/{id}` | to, message ID (deletes for everyone) |
+| Mark as Read | `POST /message/{instance}/read` | chat, message IDs, sender in groups |
 
-Fonte da mídia: **URL** pública (o GO baixa, até 64 MB), **Base64** (com ou sem o prefixo `data:...;base64,`) ou **Binário de Entrada** (arquivo vindo do nó anterior, convertido para base64; nome e tipo do arquivo saem do binário quando os campos ficam vazios).
+Media source: public **URL** (Ignite GO downloads it, up to 64 MB), **Base64** (with or without the `data:...;base64,` prefix) or **Binary File** (file from the previous node, converted to base64; the file name and type come from the binary data when those fields are empty).
 
-### Conversa
+### Chat
 
-| Operação | Rota no GO | Campos |
+| Operation | Ignite GO route | Fields |
 | --- | --- | --- |
-| Validar Números | `POST /chat/{instância}/check-numbers` | números (lista); devolve um item por número |
-| Foto de Perfil | `GET /profile/{instância}/picture?jid=...` | contato ou grupo, miniatura |
-| Presença no Chat | `POST /presence/{instância}/chat` | para, presença: digitando, gravando áudio ou pausado |
+| Check Numbers | `POST /chat/{instance}/check-numbers` | phone numbers (list); returns one item per number |
+| Get Profile Picture | `GET /profile/{instance}/picture?jid=...` | contact or group, thumbnail |
+| Send Presence | `POST /presence/{instance}/chat` | to, presence: typing, recording audio or paused |
 
-Atenção na validação de números: consulta em massa parece lista fria para o WhatsApp e pode restringir ou banir o número da instância. Confira só quem vai receber mensagem. O GO limita a quantidade por chamada e por minuto (`400 too_many_numbers`, `429 rate_limited`).
+Be careful when checking numbers: bulk checks look like a cold list to WhatsApp and can get the instance number restricted or banned. Only check people who will receive a message. Ignite GO limits how many numbers you can check per call and per minute (`400 too_many_numbers`, `429 rate_limited`).
 
-### Instância
+### Instance
 
-| Operação | Rota no GO | Observação |
+| Operation | Ignite GO route | Notes |
 | --- | --- | --- |
-| Ver Instância | `GET /instance/{instância}` | status, telefone, configurações, último evento |
-| Conectar | `GET /instance/{instância}/connect` | devolve `status` e, quando houver, `qr_code` e `qr_image`; opção para entregar o QR como binário PNG |
+| Get | `GET /instance/{instance}` | status, phone, settings, last event |
+| Connect | `GET /instance/{instance}/connect` | returns `status` and, when there is one, `qr_code` and `qr_image`; option to output the QR code as a PNG binary file |
 
-### Grupo
+### Group
 
-| Operação | Rota no GO | Observação |
+| Operation | Ignite GO route | Notes |
 | --- | --- | --- |
-| Ver Grupo | `GET /group/{instância}/{jid}` | dados e participantes |
-| Link de Convite | `GET /group/{instância}/{jid}/invite-link` | opção para revogar e gerar um novo (`reset=true`) |
+| Get | `GET /group/{instance}/{jid}` | group data and participants |
+| Get Invite Link | `GET /group/{instance}/{jid}/invite-link` | option to revoke the link and generate a new one (`reset=true`) |
 
-Sem o `@g.us` no JID do grupo, o nó completa.
+If the group JID has no `@g.us`, the node adds it.
 
-### Erros
+### Errors
 
-Com **On Error > Continue** (ou "Continue On Fail"), o item com erro sai com `error`, `description`, `httpCode` e `code`, onde `code` é o código do GO (`daily_limit_reached`, `not_connected`, `send_failed`, `bad_request` e outros). Sem essa opção, o workflow para com a mensagem do GO.
+With **On Error > Continue** (or "Continue On Fail"), the failed item comes out with `error`, `description`, `httpCode` and `code`, where `code` is the Ignite GO error code (`daily_limit_reached`, `not_connected`, `send_failed`, `bad_request` and others). Without that option, the workflow stops with the Ignite GO error message.
 
 ## Ignite GO Trigger
 
-Parâmetros: **Instância** e **Eventos**. Padrão: `message.received`.
+Parameters: **Instance** and **Events**. Default: `message.received`.
 
-Ao ativar o workflow, o nó:
+When the workflow is activated, the node:
 
-1. Lista os webhooks da instância (`GET /webhook/{instância}`). Se já existe um cadastrado por ele, com o mesmo segredo e os mesmos eventos, reaproveita; um cadastro antigo com a mesma URL é apagado.
-2. Cadastra o webhook (`POST /webhook/{instância}`) com a URL de produção do n8n, os eventos escolhidos, `webhook_by_events: false` (todos os eventos chegam na mesma URL) e um segredo aleatório de 32 bytes, guardado nos dados estáticos do workflow.
+1. Lists the webhooks of the instance (`GET /webhook/{instance}`). If it already registered one with the same secret and the same events, it reuses it; an older webhook with the same URL is deleted.
+2. Registers the webhook (`POST /webhook/{instance}`) with the n8n production URL, the selected events, `webhook_by_events: false` (all events arrive at the same URL) and a random 32-byte secret, stored in the workflow static data.
 
-Ao desativar, apaga o webhook (`DELETE /webhook/{instância}/{id}`).
+When the workflow is deactivated, the node deletes the webhook (`DELETE /webhook/{instance}/{id}`).
 
-A cada entrega, o nó calcula o HMAC-SHA256 do **corpo bruto** com o segredo e compara com o header `X-Webhook-Signature` (`sha256=<hex>`). Se não bater, responde **401** e o workflow não roda. Se bater, sai um item no formato:
+On every delivery, the node computes the HMAC-SHA256 of the **raw body** with the secret and compares it with the `X-Webhook-Signature` header (`sha256=<hex>`). If they do not match, it answers **401** and the workflow does not run. If they match, it outputs one item like this:
 
 ```json
 {
   "event": "message.received",
   "type": "message.received",
   "instanceId": "ba6bd24e-...",
-  "instanceName": "minha-loja",
+  "instanceName": "my-store",
   "messageId": "3EB0C431D5F2A1B2C3D4",
   "phone": "5511988887777",
   "fromMe": false,
   "messageType": "text",
-  "text": { "message": "Olá!" }
+  "text": { "message": "Hello!" }
 }
 ```
 
-`event` vem do header `X-Webhook-Event`; o resto é o corpo enviado pelo GO. Use `event` para rotear: o campo `type` do corpo pode vir com nome antigo em alguns eventos.
+`event` comes from the `X-Webhook-Event` header; the rest is the body sent by Ignite GO. Use `event` for routing: the `type` field of the body may carry a legacy name in some events.
 
-Eventos disponíveis: `all`, `instance.boot`, `instance.logout`, `instance.removed`, `instance.health`, `connection.state`, `connection.connected`, `connection.disconnected`, `connection.qr`, `connection.unstable`, `call.incoming`, `call.rejected`, `message.received`, `message.sent`, `message.status`, `message.history`, `message.deleted`, `message.edited`, `message.reaction`, `chat.history`, `chat.created`, `chat.updated`, `chat.deleted`, `contact.history`, `contact.created`, `contact.updated`, `presence.changed`, `group.created`, `group.updated`, `group.participants`, `label.changed`, `label.linked`.
+Available events: `all`, `instance.boot`, `instance.logout`, `instance.removed`, `instance.health`, `connection.state`, `connection.connected`, `connection.disconnected`, `connection.qr`, `connection.unstable`, `call.incoming`, `call.rejected`, `message.received`, `message.sent`, `message.status`, `message.history`, `message.deleted`, `message.edited`, `message.reaction`, `chat.history`, `chat.created`, `chat.updated`, `chat.deleted`, `contact.history`, `contact.created`, `contact.updated`, `presence.changed`, `group.created`, `group.updated`, `group.participants`, `label.changed`, `label.linked`.
 
-Opção **Incluir Mídia em Base64**: `message.received` e `message.sent` passam a trazer o arquivo da mídia em base64 (`webhook_base64`). O corpo fica bem maior.
+**Include Media as Base64** option: `message.received` and `message.sent` also carry the media file in base64 (`webhook_base64`). The payload gets much larger.
 
-O botão **Test** do webhook no painel do GO manda o evento `webhook.test`, assinado com o mesmo segredo; ele também dispara o workflow.
+The webhook **Test** button in the Ignite GO panel sends the `webhook.test` event, signed with the same secret; it also triggers the workflow.
 
-Requisitos:
+Requirements:
 
-- O GO precisa alcançar o n8n por um endereço público em http ou https. Configure `WEBHOOK_URL` no n8n se ele estiver atrás de proxy; o GO recusa `localhost` e IPs privados.
-- Cada ativação cria um webhook novo com segredo novo. Se os dados estáticos do workflow se perderem (por exemplo, workflow importado), desative e ative de novo.
+- Ignite GO must reach n8n at a public http or https address. Set `WEBHOOK_URL` in n8n if it runs behind a proxy; Ignite GO rejects `localhost` and private IPs.
+- Every activation creates a new webhook with a new secret. If the workflow static data is lost (for example, an imported workflow), deactivate and activate the workflow again.
 
-## Compatibilidade
+## Compatibility
 
-- Testado no n8n 2.10.3 (Node.js 22), com `n8nNodesApiVersion` 1. O pacote usa a API atual do `n8n-workflow` (`NodeConnectionTypes`); versões antigas do n8n 1.x podem não carregar os nós.
-- Ignite GO com as rotas da API pública atual (`/message`, `/chat`, `/presence`, `/profile`, `/instance`, `/group`, `/webhook`).
-- O nó de ação pode ser usado como ferramenta de agente de IA (`usableAsTool`).
+- Tested on n8n 2.10.3 (Node.js 22), with `n8nNodesApiVersion` 1. The package uses the current `n8n-workflow` API (`NodeConnectionTypes`); older n8n 1.x versions may not load the nodes.
+- Ignite GO with the routes of the current public API (`/auth`, `/message`, `/chat`, `/presence`, `/profile`, `/instance`, `/group`, `/webhook`).
+- The action node can be used as an AI agent tool (`usableAsTool`).
 
-## Desenvolvimento
+## Development
 
 ```bash
 npm install
-npm run build   # tsc e cópia de ícones e codex para dist/
-npm run lint    # eslint-plugin-n8n-nodes-base
+npm run build      # tsc, then copies icons and codex files to dist/
+npm run lint       # same rules as the n8n verification scanner, on the sources
+npm run lint:dist  # same rules on the built files that go into the npm package
 ```
 
-Para publicar uma versão nova, veja o [RELEASE.md](RELEASE.md).
+To publish a new version, see [RELEASE.md](RELEASE.md).
 
-## Licença
+## License
 
 MIT

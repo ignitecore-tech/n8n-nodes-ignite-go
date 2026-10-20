@@ -7,7 +7,9 @@ import type {
 	ILoadOptionsFunctions,
 	INodePropertyOptions,
 	IWebhookFunctions,
+	JsonObject,
 } from 'n8n-workflow';
+import { NodeApiError } from 'n8n-workflow';
 
 export type IgniteGoContext =
 	| IExecuteFunctions
@@ -21,12 +23,12 @@ export interface IgniteGoResponse {
 }
 
 /**
- * Escapa um segmento de caminho do jeito que o Go (net/url) escaparia.
+ * Escapes a path segment the same way Go's net/url would.
  *
- * O roteador do GO (chi) passa a usar o caminho cru quando o caminho recebido difere do
- * escape padrão do Go, e aí os parâmetros chegam sem decodificar. Exemplo: um JID de grupo
- * mandado como "123%40g.us" chegaria ao handler com o "%40" literal. Por isso o "@" (e os
- * outros reservados que o Go deixa como estão) vão sem escape, e !'()* vão escapados.
+ * The Ignite GO router (chi) switches to the raw path when the received path differs from Go's
+ * default escaping, and then the route parameters arrive still encoded. Example: a group JID sent
+ * as "123%40g.us" would reach the handler with a literal "%40". That is why "@" (and the other
+ * reserved characters Go leaves as they are) are sent unescaped, while !'()* are escaped.
  */
 export function goPathSegment(value: string): string {
 	return encodeURIComponent(value)
@@ -34,7 +36,7 @@ export function goPathSegment(value: string): string {
 		.replace(/[!'()*]/g, (char) => '%' + char.charCodeAt(0).toString(16).toUpperCase());
 }
 
-/** URL base da credencial, sem barra no final. */
+/** Base URL from the credential, without a trailing slash. */
 export async function getBaseUrl(this: IgniteGoContext): Promise<string> {
 	const credentials = await this.getCredentials('igniteGoApi');
 	return String(credentials.serverUrl ?? '')
@@ -43,8 +45,9 @@ export async function getBaseUrl(this: IgniteGoContext): Promise<string> {
 }
 
 /**
- * Chamada autenticada à API do Ignite GO (header `apikey` vem da credencial).
- * Devolve status e corpo; erros HTTP sobem como NodeApiError, lançado pelo helper do n8n.
+ * Authenticated call to the Ignite GO API (the `apikey` header comes from the credential).
+ * Returns the status code and body. Failures are thrown as NodeApiError, carrying the Ignite GO
+ * error message and code.
  */
 export async function igniteGoApiRequest(
 	this: IgniteGoContext,
@@ -71,20 +74,27 @@ export async function igniteGoApiRequest(
 			options,
 		)) as { statusCode: number; body: unknown };
 	} catch (error) {
-		// O GO responde erro como { error: "codigo", message: "texto" }; o n8n guarda esse corpo
-		// em context.data. Leva o texto e o código para a mensagem, que o padrão do n8n deixa genérica.
+		// Ignite GO answers errors as { error: "code", message: "text" } and n8n keeps that body in
+		// context.data. The default n8n message is generic, so the Ignite GO text and code go into it.
 		const data = goErrorBody(error);
-		if (data !== undefined && typeof data.message === 'string' && data.message !== '') {
-			const code = typeof data.error === 'string' && data.error !== '' ? ` (${data.error})` : '';
-			(error as Error).message = `Ignite GO${code}: ${data.message}`;
-		}
-		throw error;
+		const goMessage =
+			data !== undefined && typeof data.message === 'string' && data.message !== ''
+				? `Ignite GO${typeof data.error === 'string' && data.error !== '' ? ` (${data.error})` : ''}: ${data.message}`
+				: undefined;
+
+		// When the n8n helper already threw a NodeApiError, the constructor returns that same error.
+		const apiError = new NodeApiError(this.getNode(), error as JsonObject, {
+			message: goMessage,
+		});
+		if (goMessage !== undefined) apiError.message = goMessage;
+		if (data !== undefined && apiError.context.data === undefined) apiError.context.data = data;
+		throw apiError;
 	}
 
 	return { statusCode: response.statusCode, body: response.body };
 }
 
-/** Corpo de erro do GO ({ error, message }) guardado pelo NodeApiError, quando houver. */
+/** Ignite GO error body ({ error, message }) kept by NodeApiError, when there is one. */
 export function goErrorBody(error: unknown): IDataObject | undefined {
 	const data = (error as { context?: { data?: unknown } } | undefined)?.context?.data;
 	return data !== null && typeof data === 'object' && !Array.isArray(data)
@@ -92,7 +102,7 @@ export function goErrorBody(error: unknown): IDataObject | undefined {
 		: undefined;
 }
 
-/** Remove chaves com string vazia, undefined ou null, para não mandar campo vazio ao GO. */
+/** Drops keys holding an empty string, undefined or null, so no empty field is sent to Ignite GO. */
 export function compact(obj: IDataObject): IDataObject {
 	const out: IDataObject = {};
 	for (const [key, value] of Object.entries(obj)) {
@@ -103,7 +113,7 @@ export function compact(obj: IDataObject): IDataObject {
 	return out;
 }
 
-/** Lê uma lista vinda de um campo texto (vírgula, ponto e vírgula, espaço ou quebra de linha) ou de um array. */
+/** Reads a list from a text field (commas, semicolons, spaces or line breaks) or from an array. */
 export function toList(value: unknown): string[] {
 	if (Array.isArray(value)) {
 		return value.map((v) => String(v).trim()).filter((v) => v !== '');
@@ -114,41 +124,38 @@ export function toList(value: unknown): string[] {
 		.filter((v) => v !== '');
 }
 
-/**
- * Eventos de webhook do GO (internal/models/webhook.go, AllEvents), com rótulo em pt-BR.
- * "all" assina todos.
- */
+/** Ignite GO webhook events. "all" subscribes to every event. */
 export const WEBHOOK_EVENTS: INodePropertyOptions[] = [
-	{ name: 'Todos os Eventos (all)', value: 'all', description: 'Assina todos os eventos da instância' },
-	{ name: 'Instância Iniciada (instance.boot)', value: 'instance.boot' },
-	{ name: 'Instância Deslogada (instance.logout)', value: 'instance.logout' },
-	{ name: 'Instância Removida (instance.removed)', value: 'instance.removed' },
-	{ name: 'Saúde da Instância (instance.health)', value: 'instance.health', description: 'Sinal de saúde: ban, trava, restrição ou falha de envio' },
-	{ name: 'Conexão: Mudança de Estado (connection.state)', value: 'connection.state' },
-	{ name: 'Conexão: Conectada (connection.connected)', value: 'connection.connected' },
-	{ name: 'Conexão: Desconectada (connection.disconnected)', value: 'connection.disconnected' },
-	{ name: 'Conexão: QR Code (connection.qr)', value: 'connection.qr' },
-	{ name: 'Conexão: Instável (connection.unstable)', value: 'connection.unstable', description: 'Muitas quedas numa janela curta' },
-	{ name: 'Chamada Recebida (call.incoming)', value: 'call.incoming' },
-	{ name: 'Chamada Rejeitada (call.rejected)', value: 'call.rejected' },
-	{ name: 'Mensagem Recebida (message.received)', value: 'message.received' },
-	{ name: 'Mensagem Enviada (message.sent)', value: 'message.sent', description: 'Mensagem enviada pela API' },
-	{ name: 'Status da Mensagem (message.status)', value: 'message.status', description: 'Entregue ou lida' },
-	{ name: 'Histórico de Mensagens (message.history)', value: 'message.history' },
-	{ name: 'Mensagem Apagada (message.deleted)', value: 'message.deleted' },
-	{ name: 'Mensagem Editada (message.edited)', value: 'message.edited' },
-	{ name: 'Reação em Mensagem (message.reaction)', value: 'message.reaction' },
-	{ name: 'Histórico de Conversas (chat.history)', value: 'chat.history' },
-	{ name: 'Conversa Criada (chat.created)', value: 'chat.created' },
-	{ name: 'Conversa Atualizada (chat.updated)', value: 'chat.updated' },
-	{ name: 'Conversa Apagada (chat.deleted)', value: 'chat.deleted' },
-	{ name: 'Histórico de Contatos (contact.history)', value: 'contact.history' },
-	{ name: 'Contato Criado (contact.created)', value: 'contact.created' },
-	{ name: 'Contato Atualizado (contact.updated)', value: 'contact.updated' },
-	{ name: 'Presença Alterada (presence.changed)', value: 'presence.changed' },
-	{ name: 'Grupo Criado (group.created)', value: 'group.created' },
-	{ name: 'Grupo Atualizado (group.updated)', value: 'group.updated' },
-	{ name: 'Participantes do Grupo (group.participants)', value: 'group.participants' },
-	{ name: 'Etiqueta Alterada (label.changed)', value: 'label.changed' },
-	{ name: 'Etiqueta Vinculada (label.linked)', value: 'label.linked' },
+	{ name: 'All Events (all)', value: 'all', description: 'Subscribe to every event of the instance' },
+	{ name: 'Instance Started (instance.boot)', value: 'instance.boot' },
+	{ name: 'Instance Logged Out (instance.logout)', value: 'instance.logout' },
+	{ name: 'Instance Removed (instance.removed)', value: 'instance.removed' },
+	{ name: 'Instance Health (instance.health)', value: 'instance.health', description: 'Health signal: ban, lock, restriction or send failure' },
+	{ name: 'Connection: State Changed (connection.state)', value: 'connection.state' },
+	{ name: 'Connection: Connected (connection.connected)', value: 'connection.connected' },
+	{ name: 'Connection: Disconnected (connection.disconnected)', value: 'connection.disconnected' },
+	{ name: 'Connection: QR Code (connection.qr)', value: 'connection.qr' },
+	{ name: 'Connection: Unstable (connection.unstable)', value: 'connection.unstable', description: 'Many disconnections in a short time window' },
+	{ name: 'Call Received (call.incoming)', value: 'call.incoming' },
+	{ name: 'Call Rejected (call.rejected)', value: 'call.rejected' },
+	{ name: 'Message Received (message.received)', value: 'message.received' },
+	{ name: 'Message Sent (message.sent)', value: 'message.sent', description: 'Message sent through the API' },
+	{ name: 'Message Status (message.status)', value: 'message.status', description: 'Delivered or read' },
+	{ name: 'Message History (message.history)', value: 'message.history' },
+	{ name: 'Message Deleted (message.deleted)', value: 'message.deleted' },
+	{ name: 'Message Edited (message.edited)', value: 'message.edited' },
+	{ name: 'Message Reaction (message.reaction)', value: 'message.reaction' },
+	{ name: 'Chat History (chat.history)', value: 'chat.history' },
+	{ name: 'Chat Created (chat.created)', value: 'chat.created' },
+	{ name: 'Chat Updated (chat.updated)', value: 'chat.updated' },
+	{ name: 'Chat Deleted (chat.deleted)', value: 'chat.deleted' },
+	{ name: 'Contact History (contact.history)', value: 'contact.history' },
+	{ name: 'Contact Created (contact.created)', value: 'contact.created' },
+	{ name: 'Contact Updated (contact.updated)', value: 'contact.updated' },
+	{ name: 'Presence Changed (presence.changed)', value: 'presence.changed' },
+	{ name: 'Group Created (group.created)', value: 'group.created' },
+	{ name: 'Group Updated (group.updated)', value: 'group.updated' },
+	{ name: 'Group Participants (group.participants)', value: 'group.participants' },
+	{ name: 'Label Changed (label.changed)', value: 'label.changed' },
+	{ name: 'Label Linked (label.linked)', value: 'label.linked' },
 ];

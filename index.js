@@ -1,2 +1,2 @@
-// Ponto de entrada vazio. O n8n carrega os nós e a credencial pela seção "n8n" do package.json.
+// Empty entry point. n8n loads the nodes and the credential from the "n8n" section of package.json.
 module.exports = {};

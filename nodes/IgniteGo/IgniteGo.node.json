@@ -6,7 +6,7 @@
 	"subcategories": {
 		"Communication": ["WhatsApp"]
 	},
-	"alias": ["WhatsApp", "Ignite", "GO", "mensagem"],
+	"alias": ["WhatsApp", "Ignite", "GO", "message"],
 	"resources": {
 		"credentialDocumentation": [
 			{
