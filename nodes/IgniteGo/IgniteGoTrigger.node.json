@@ -1,0 +1,22 @@
+{
+	"node": "n8n-nodes-ignite-go.igniteGoTrigger",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Communication"],
+	"subcategories": {
+		"Communication": ["WhatsApp"]
+	},
+	"alias": ["WhatsApp", "Ignite", "GO", "webhook", "evento"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://www.npmjs.com/package/n8n-nodes-ignite-go"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://www.npmjs.com/package/n8n-nodes-ignite-go"
+			}
+		]
+	}
+}

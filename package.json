@@ -1,0 +1,61 @@
+{
+  "name": "n8n-nodes-ignite-go",
+  "version": "0.1.0",
+  "description": "Nós do n8n para o Ignite GO, API de WhatsApp da Ignite Core: envio de mensagens, conversas, instância, grupos e trigger por webhook assinado.",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "ignite-go",
+    "ignitecore",
+    "whatsapp"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/ignitecore-tech/n8n-nodes-ignite-go#readme",
+  "author": {
+    "name": "Ignite Core"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ignitecore-tech/n8n-nodes-ignite-go.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ignitecore-tech/n8n-nodes-ignite-go/issues"
+  },
+  "engines": {
+    "node": ">=20.15"
+  },
+  "main": "index.js",
+  "scripts": {
+    "clean": "node scripts/clean.js",
+    "build": "node scripts/clean.js && tsc && node scripts/copy-assets.js",
+    "dev": "tsc --watch",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && eslint -c .eslintrc.prepublish.js nodes credentials package.json"
+  },
+  "files": [
+    "dist",
+    "index.js"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/IgniteGoApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/IgniteGo/IgniteGo.node.js",
+      "dist/nodes/IgniteGo/IgniteGoTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/parser": "^8.71.2",
+    "eslint": "^8.57.1",
+    "eslint-plugin-n8n-nodes-base": "^2.0.0",
+    "n8n-workflow": "^2.16.0",
+    "typescript": "~5.9.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}
